@@ -39,8 +39,10 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"pnconnector/src/log"
-	"pnconnector/src/routers/m9k/model"
+	"kouros/log"
+	"kouros/model"
+    pos "kouros/pos"
+    "fmt"
 )
 
 func CalliBoFOS(ctx *gin.Context, f func(string, interface{}) (model.Request, model.Response, error)) {
@@ -48,6 +50,15 @@ func CalliBoFOS(ctx *gin.Context, f func(string, interface{}) (model.Request, mo
 	ctx.ShouldBindBodyWith(&req, binding.JSON)
 	_, res, err := f(header.XrId(ctx), req.Param)
 	api.HttpResponse(ctx, res, err)
+}
+
+func CalliBoFOS_new(ctx *gin.Context, f func(string, interface{}, pos.POSManager) (model.Response, error), posMngr pos.POSManager) {
+    req := model.Request{}
+    ctx.ShouldBindBodyWith(&req, binding.JSON)
+    fmt.Println("req.Param in CalliBoFOS_new >>>>>>   ",req.Param)
+    res, err := f(header.XrId(ctx), req.Param, posMngr)
+    fmt.Println(" in CalliBoFOS_new",res, err)
+    api.HttpResponse(ctx, res, err)
 }
 
 func CalliBoFOSwithParam(ctx *gin.Context, f func(string, interface{}) (model.Request, model.Response, error), param interface{}) {
@@ -60,6 +71,18 @@ func CalliBoFOSwithParam(ctx *gin.Context, f func(string, interface{}) (model.Re
 
 	_, res, err := f(header.XrId(ctx), param)
 	api.HttpResponse(ctx, res, err)
+}
+
+func CalliBoFOSwithParam_new(ctx *gin.Context, f func(string, interface{}, pos.POSManager) (model.Response, error), param interface{}, posMngr pos.POSManager) {
+    req := model.Request{}
+    ctx.ShouldBindBodyWith(&req, binding.JSON)
+
+    if req.Param != nil {
+        param = merge(param, req.Param)
+    }
+
+    res, err := f(header.XrId(ctx), param, posMngr)
+    api.HttpResponse(ctx, res, err)
 }
 
 func merge(src interface{}, tar interface{}) interface{} {

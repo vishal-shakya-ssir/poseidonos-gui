@@ -33,28 +33,43 @@
 package api
 
 import (
-	"pnconnector/src/log"
-	iBoFOS "pnconnector/src/routers/m9k/api/ibofos"
-	"pnconnector/src/routers/m9k/model"
-	//"pnconnector/src/setting"
+	"kouros/log"
+	"kouros/model"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"pnconnector/src/util"
+    //"dagent/src/routers/m9k/api/ibofos"
+    //"../ibofos"
+    "kouros/errors"
 )
+
+var (
+    errLocked    = errors.New("Locked out buddy")
+    ErrSending   = errors.New("Sending error")
+    ErrReceiving = errors.New("Receiving error")
+    ErrJson      = errors.New("Json error")
+    ErrRes       = errors.New("Response error")
+    ErrConn      = errors.New("Could not connect to the CLI server. Is PoseidonOS running?")
+    ErrJsonType  = errors.New("Json Type Validation Error")
+    unmarshalErrMsg   = "Could not Unmarshal json response in "
+    marshalErrMsg     = "Failed to marshal the param structure in "
+    commandFailureMsg = "Received error from grpc server in "
+
+)
+
 
 func HttpResponse(ctx *gin.Context, res model.Response, err error) {
 	switch err {
-	case iBoFOS.ErrSending:
+	case ErrSending:
 		BadRequest(ctx, res, 11000)
-	case iBoFOS.ErrJson:
+	case ErrJson:
 		BadRequest(ctx, res, 11010)
-	case iBoFOS.ErrConn:
+	case ErrConn:
 		BadRequest(ctx, res, 11020)
-	case iBoFOS.ErrReceiving:
+	case ErrReceiving:
 		BadRequest(ctx, res, 10050)
-	case iBoFOS.ErrJsonType:
+	case ErrJsonType:
 		BadRequest(ctx, res, 10005)
-	case iBoFOS.ErrRes:
+	case ErrRes:
 		BadRequest(ctx, res, res.Result.Status.Code)
 	default:
 		makeResponseWithErr(ctx, res, res.Result.Status.Code, err)
@@ -86,7 +101,6 @@ func Success(ctx *gin.Context, res model.Response, code int) {
 func makeResponse(ctx *gin.Context, httpStatus int, res model.Response, code int, isBadRequest bool) {
 	posDescription := res.Result.Status.Description
 	errorInfo := res.Result.Status.ErrorInfo
-	res.Result.Status, _ = util.GetStatusInfo(code)
 	res.Result.Status.PosDescription = posDescription
 	if isBadRequest == true {
 		log.Errorf("makeResponse : %+v", res)

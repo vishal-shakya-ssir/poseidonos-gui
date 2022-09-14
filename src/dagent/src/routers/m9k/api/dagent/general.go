@@ -33,11 +33,11 @@ package dagent
 
 import (
 	"errors"
-	iBoFOS "pnconnector/src/routers/m9k/api/ibofos"
-	"pnconnector/src/routers/m9k/model"
-	"pnconnector/src/util"
+	"kouros/model"
+	"kouros/utils"
 	"syscall"
 	"time"
+    "kouros"
 )
 
 var GitCommit string
@@ -54,10 +54,10 @@ func HeartBeat(xrId string, param interface{}) (model.Response, error) {
 
 	if successTime <= 0 {
 		err = errors.New("one of iBoF service is dead")
-		res.Result.Status, _ = util.GetStatusInfo(12010)
+		res.Result.Status, _ = utils.GetStatusInfo(12010)
 	} else {
 		LastSuccessTime = successTime
-		res.Result.Status, _ = util.GetStatusInfo(0)
+		res.Result.Status, _ = utils.GetStatusInfo(0)
 	}
 
 	res.LastSuccessTime = LastSuccessTime
@@ -67,7 +67,9 @@ func HeartBeat(xrId string, param interface{}) (model.Response, error) {
 func updateSuccessTime(xrId string) int64 {
 	if LastSuccessTime+MAXAGE < time.Now().UTC().Unix() {
 		param := model.DeviceParam{}
-		_, res, _ := iBoFOS.IBoFOSInfo(xrId, param)
+        posMngr,_ := kouros.NewPOSManager(pos.GRPC)
+        posMngr.Init("dagent","127.0.0.1:50055")
+		res, _ := CallGetSystemInfo(xrId, param,posMngr)
 		return res.LastSuccessTime
 	} else {
 		return LastSuccessTime

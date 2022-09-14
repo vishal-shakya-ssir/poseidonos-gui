@@ -41,10 +41,10 @@ import (
 	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
-	"pnconnector/src/log"
-	iBoFOS "pnconnector/src/routers/m9k/api/ibofos"
-	"pnconnector/src/routers/m9k/model"
-	"pnconnector/src/util"
+	"kouros/log"
+	//iBoFOS "pnconnector/src/routers/m9k/api/ibofos"
+	"kouros/model"
+	"kouros/utils"
 	"strconv"
 	"time"
 )
@@ -143,7 +143,7 @@ func createVolumeWrite(CreateVolCh chan model.Response, ctx *gin.Context, volPar
 			if err != nil || res.Result.Status.Code != 0 {
 				if createItr == MAX_RETRY_COUNT {
 					posDescription := res.Result.Status.Description
-					res.Result.Status, _ = util.GetStatusInfo(res.Result.Status.Code)
+					res.Result.Status, _ = utils.GetStatusInfo(res.Result.Status.Code)
 					res.Result.Status.PosDescription = posDescription
 					CreateVolCh <- res
 					posErr = true
@@ -319,27 +319,27 @@ func checkArrayExist(array string) (int, bool) {
 }
 func ImplementAsyncMultiVolume(ctx *gin.Context, f func(string, interface{}) (model.Request, model.Response, error), volParam *model.VolumeParam, command string) {
 	res := model.Response{}
-	res.Result.Status, _ = util.GetStatusInfo(10202)
+	res.Result.Status, _ = utils.GetStatusInfo(10202)
 	if volParam.Name == "" {
-		res.Result.Status, _ = util.GetStatusInfo(2020)
+		res.Result.Status, _ = utils.GetStatusInfo(2020)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, &res)
 		return
 	}
 
 	if status, ok := checkArrayExist(volParam.Array); ok {
-		res.Result.Status, _ = util.GetStatusInfo(status)
+		res.Result.Status, _ = utils.GetStatusInfo(status)
 		ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, &res)
 		return
 	}
 
 	if status, ok := maxCountExceeded(int(volParam.TotalCount), volParam.Array); ok {
-		res.Result.Status, _ = util.GetStatusInfo(status)
+		res.Result.Status, _ = utils.GetStatusInfo(status)
 		ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, &res)
 		return
 	}
 
 	if (command == CREATE_VOLUME && CreateVolumeMutex) || (command == MOUNT_VOLUME && MountVolumeMutex) {
-		res.Result.Status, _ = util.GetStatusInfo(11030)
+		res.Result.Status, _ = utils.GetStatusInfo(11030)
 		ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, &res)
 		return
 	}
